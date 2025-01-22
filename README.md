@@ -11,6 +11,8 @@ research and code on the 2025 TON C++ contest.
 
 ## How can I build the project?
 
+> For the thread pool implementation, Make sure you are in the `thread-pool-trials` directory, first.
+
 ### Debug build
 
 ```bash
@@ -24,6 +26,8 @@ mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build 
 ```
 
 ## So how do I run the tests?
+
+> For the thread pool implementation, Make sure you are in the `thread-pool-trials` directory, first.
 
 ```bash
 # if already not in build directory
