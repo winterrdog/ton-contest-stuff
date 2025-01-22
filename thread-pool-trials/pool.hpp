@@ -28,7 +28,8 @@ public:
 
   // adds task to worker pool's task queue
   template <class F, class... Args>
-  auto enqueue(F &&fn, Args &&...args)
+  [[nodiscard("please make sure the output is used by producer")]] auto
+  enqueue(F &&fn, Args &&...args)
       -> std::future<typename std::invoke_result<F, Args...>::type> {
     /*
     algorithm:
