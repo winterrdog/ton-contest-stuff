@@ -1,0 +1,51 @@
+flowchart LR
+subgraph start up
+    A[start_up] -->B[unpack_block_candidate] -->C[init_parse]
+    B --> D[extract_collated_data] -->|loop on all roots|E[extract_collated_data_from]
+    A -->|callback after loading states corresponding to previous blocks. can only have a max of 2 previous blocks. the request is sent in a loop on all previous blocks|G[after_get_shard_state /callback/] -->|called if pending is 0|z[try_validate]
+    A -->|callback after requesting for masterchain state for this block|F[after_get_mc_state /callback/] -->H[process_mc_state] --> I[try_unpack_mc_state] --> J[fetch_config_params]
+    I --> K[check_this_shard_mc_info] --> L[check_prev_block]
+    H --> N[register_mc_state]
+    K --> M[check_prev_block_exact]
+    F -->|called if pending is 0|z
+    end
+    subgraph stage 0
+    z --1--> O[compute_prev_state]
+    z --2--> W[request_neighbor_queues] -->|called in a loop for all neighbor queues|X[got_neighbor_out_queue /callback/] -->|called in a loop in all entries in the neighbor's processed_upto list|S[request_aux_mc_state]--> T[after_get_aux_shard_state /callback/] --> z
+    T --> N
+    X -->|if pending is 0|z
+    z --3--> P[unpack_prev_state] -->|if after_merge_ is true|Q[unpack_merge_prev_state] -->|calls it twice for both states that were merged|R[unpack_one_prev_state] -->|called in a lambda passed into a function to unpack shard state|S
+    P --> R
+    P -->|only runs if after_split_ is true| U[split_prev_state]
+    z --4--> V[init_next_state]
+    z --5--> Y[check_utime_lt]
+    z --6--> Z[prepare_out_mesg_queue_size]
+    end
+    subgraph stage 1
+    z --> |called for ps.processed_upto_, ns.processed_upto_, sibling if sibling_procesed_upto_ exists. and also called for all neighbors|a[fix_all_processed_upto] -->|called in a loop for all entries|b[fix_processed_upto] --> c[fix_one_processed_upto] --> aaa[get_aux_mc_state]
+    z --> d[add_trivial_neighbor] -->|called if after_merge_ is true|e[add_trivial_neighbor_after_merge]
+    z --> f[unpack_block_data] --> g[unpack_precheck_value_flow] -->|called if value_flow_.minted.is_zero is false|h[compute_minted_amount]
+    z --> k[precheck_account_transactions] -->|called in lambda|l[precheck_one_account_block] -->|called in lambda|m[precheck_one_transaction]
+    z --> n[build_new_message_queue]
+    z --> o[precheck_message_queue_update] -->|called in lambda|p[precheck_one_message_queue_update]
+    z --> q[unpack_dispatch_queue_update] -->|called in lambda|r[check_account_dispatch_queue_update]
+
+    z --> s[check_in_msg_descr] -->|called in lambda|t[check_in_msg] --> u[check_imported_message] --> v[update_max_processed_lt_hash]
+    t --> w[is_special_in_msg]
+    t --> x[is_valid_transaction_ref] --> y[lookup_transaction]
+    z --> aa[check_out_msg_descr] --> bb[check_out_msg] --> cc[update_min_enqueued_lt_hash]
+    bb --> x
+    bb --> w
+    z --> ee[check_dispatch_queue_update]
+    z --> dd[check_processed_upto]
+    z --> ff[check_in_queue] -->|called in a while loop|gg[check_neighbor_outbound_message]
+    z --> hh[check_transactions] -->|called in lambda passed in something similar to for each|ii[check_account_transactions] --> kk[unpack_account] --> ll[make_account_from]
+    ii -->|called in lambda passed in something similar to for each|jj[check_one_transaction]
+    z --> i[postcheck_account_updates] -->|called in a lambda to scan diff|j[postcheck_one_account_update]
+
+    z --> bbb[check_message_processing_order]
+    z --> ccc[check_new_state]
+    z --> ddd[postcheck_value_flow]
+
+    z --> mm[build_state_update] --> nn[store_master_ref]
+    end
