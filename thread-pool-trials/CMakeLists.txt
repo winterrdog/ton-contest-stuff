@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(GTest REQUIRED)
 
-add_executable(test_pool test-pool.cc pool.cc)
+add_executable(test_pool test-pool.cc)
 
 # Link against pthread
 target_link_libraries(test_pool
